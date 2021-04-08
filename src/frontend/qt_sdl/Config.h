@@ -35,6 +35,13 @@ enum
     HK_MAX
 };
 
+enum
+{
+    ANALOG_X,
+    ANALOG_Y,
+    ANALOG_MAX,
+};
+
 namespace Config
 {
 
@@ -54,6 +61,8 @@ extern int JoyMapping[12];
 
 extern int HKKeyMapping[HK_MAX];
 extern int HKJoyMapping[HK_MAX];
+
+extern int AnalogMapping[ANALOG_MAX];
 
 extern int JoystickID;
 

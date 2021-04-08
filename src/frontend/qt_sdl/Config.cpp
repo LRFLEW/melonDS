@@ -32,6 +32,8 @@ int JoyMapping[12];
 int HKKeyMapping[HK_MAX];
 int HKJoyMapping[HK_MAX];
 
+int AnalogMapping[ANALOG_MAX];
+
 int JoystickID;
 
 int WindowWidth;
@@ -185,6 +187,9 @@ ConfigEntry ConfigFile[] =
     {"HKJoy_SolarSensorDecrease", 0, &HKJoyMapping[HK_SolarSensorDecrease], -1, NULL, 0},
     {"HKJoy_SolarSensorIncrease", 0, &HKJoyMapping[HK_SolarSensorIncrease], -1, NULL, 0},
     {"HKJoy_FrameStep",           0, &HKJoyMapping[HK_FrameStep],           -1, NULL, 0},
+
+    {"ANALOG_X", 0, &AnalogMapping[ANALOG_X], -1, NULL, 0},
+    {"ANALOG_Y", 0, &AnalogMapping[ANALOG_Y], -1, NULL, 0},
 
     {"JoystickID", 0, &JoystickID, 0, NULL, 0},
 

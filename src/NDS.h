@@ -243,6 +243,7 @@ void TouchScreen(u16 x, u16 y);
 void ReleaseScreen();
 
 void SetKeyMask(u32 mask);
+void SetAnalog(float x, float y);
 
 bool IsLidClosed();
 void SetLidClosed(bool closed);

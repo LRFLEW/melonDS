@@ -28,6 +28,7 @@ extern int JoystickID;
 extern SDL_Joystick* Joystick;
 
 extern u32 InputMask;
+extern float AnalogX, AnalogY;
 
 void Init();
 

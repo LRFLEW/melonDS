@@ -487,6 +487,7 @@ void EmuThread::run()
 
             // process input and hotkeys
             NDS::SetKeyMask(Input::InputMask);
+            NDS::SetAnalog(Input::AnalogX, Input::AnalogY);
 
             if (Input::HotkeyPressed(HK_Lid))
             {
@@ -2972,7 +2973,7 @@ int CALLBACK WinMain(HINSTANCE hinst, HINSTANCE hprev, LPSTR cmdline, int cmdsho
 {
     int argc = 0;
     wchar_t** argv_w = CommandLineToArgvW(GetCommandLineW(), &argc);
-    char* nullarg = "";
+    char nullarg[] = "";
 
     char** argv = new char*[argc];
     for (int i = 0; i < argc; i++)

@@ -49,6 +49,18 @@ const char* hk_addons_labels[] =
     "[Boktai] Sunlight - ",
 };
 
+const int analog_order[] =
+{
+    ANALOG_X,
+    ANALOG_Y,
+};
+
+const char* analog_labels[] =
+{
+    "Analog Left",
+    "Analog Up",
+};
+
 const int hk_general[] =
 {
     HK_Pause,
@@ -77,6 +89,7 @@ const char* hk_general_labels[] =
 
 const int keypad_num = 12;
 const int hk_addons_num = 2;
+const int analog_num = 2;
 const int hk_general_num = 9;
 
 
@@ -97,6 +110,11 @@ InputConfigDialog::InputConfigDialog(QWidget* parent) : QDialog(parent), ui(new 
         addonsJoyMap[i] = Config::HKJoyMapping[hk_addons[i]];
     }
 
+    for (int i = 0; i < analog_num; i++)
+    {
+        analogMap[i] = Config::AnalogMapping[analog_order[i]];
+    }
+
     for (int i = 0; i < hk_general_num; i++)
     {
         hkGeneralKeyMap[i] = Config::HKKeyMapping[hk_general[i]];
@@ -105,6 +123,16 @@ InputConfigDialog::InputConfigDialog(QWidget* parent) : QDialog(parent), ui(new 
 
     populatePage(ui->tabAddons, hk_addons_num, hk_addons_labels, addonsKeyMap, addonsJoyMap);
     populatePage(ui->tabHotkeysGeneral, hk_general_num, hk_general_labels, hkGeneralKeyMap, hkGeneralJoyMap);
+
+    // Analog Config
+    for (int i = 0, k = joyAddons->rowCount(); i < 2; i++, k++)
+    {
+        QLabel* label = new QLabel(QString(analog_labels[i])+":");
+        AnalogMapButton* btn = new AnalogMapButton(&analogMap[i]);
+
+        joyAddons->addWidget(label, k, 0);
+        joyAddons->addWidget(btn, k, 1);
+    }
 
     int njoy = SDL_NumJoysticks();
     if (njoy > 0)
@@ -157,6 +185,7 @@ void InputConfigDialog::populatePage(QWidget* page, int num, const char** labels
 {
     // kind of a hack
     bool ishotkey = (page != ui->tabInput);
+    bool isaddons = (page == ui->tabAddons);
 
     QHBoxLayout* main_layout = new QHBoxLayout();
 
@@ -178,6 +207,7 @@ void InputConfigDialog::populatePage(QWidget* page, int num, const char** labels
     group_layout->setRowStretch(num, 1);
     group->setLayout(group_layout);
     group->setMinimumWidth(275);
+    if (isaddons) joyAddons = group_layout;
 
     group = new QGroupBox("Joystick mappings:");
     main_layout->addWidget(group);
@@ -210,6 +240,11 @@ void InputConfigDialog::on_InputConfigDialog_accepted()
     {
         Config::HKKeyMapping[hk_addons[i]] = addonsKeyMap[i];
         Config::HKJoyMapping[hk_addons[i]] = addonsJoyMap[i];
+    }
+
+    for (int i = 0; i < analog_num; i++)
+    {
+        Config::AnalogMapping[analog_order[i]] = analogMap[i];
     }
 
     for (int i = 0; i < hk_general_num; i++)

@@ -20,6 +20,7 @@
 #define INPUTCONFIGDIALOG_H
 
 #include <QDialog>
+#include <QGridLayout>
 #include <QPushButton>
 
 namespace Ui { class InputConfigDialog; }
@@ -64,10 +65,12 @@ private:
     void setupKeypadPage();
 
     Ui::InputConfigDialog* ui;
+    QGridLayout* joyAddons;
 
     int keypadKeyMap[12],   keypadJoyMap[12];
     int addonsKeyMap[2],    addonsJoyMap[2];
     int hkGeneralKeyMap[9], hkGeneralJoyMap[9];
+    int analogMap[2];
 };
 
 

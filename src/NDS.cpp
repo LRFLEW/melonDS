@@ -16,6 +16,7 @@
     with melonDS. If not, see http://www.gnu.org/licenses/.
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -166,6 +167,8 @@ u32 SqrtRes;
 u32 KeyInput;
 u16 KeyCnt;
 u16 RCnt;
+
+u16 AnalogX, AnalogY, AnalogMagnitude, AnalogAngle;
 
 bool Running;
 
@@ -624,6 +627,8 @@ void Reset()
     KeyInput = 0x007F03FF;
     KeyCnt = 0;
     RCnt = 0;
+
+    AnalogX = AnalogY = AnalogMagnitude = AnalogAngle = 0;
 
     NDSCart::Reset();
     GBACart::Reset();
@@ -1206,6 +1211,25 @@ void SetKeyMask(u32 mask)
 
     KeyInput &= 0xFFFCFC00;
     KeyInput |= key_lo | (key_hi << 16);
+}
+
+/* 2^15 / Pi */
+#define ANGLE_TO_SHORT 10430.37835047f
+/* (float) 0x1000 */
+#define FLOAT_TO_FIXED 4096.0f
+void SetAnalog(float x, float y) {
+    float mag = hypotf(x, y);
+    float ang = atan2f(x, y);
+    if (mag > 1.0f) {
+        x /= mag;
+        y /= mag;
+        mag = 1.0f;
+    }
+
+    AnalogX = (u16) lroundf(x * FLOAT_TO_FIXED);
+    AnalogY = (u16) lroundf(y * FLOAT_TO_FIXED);
+    AnalogMagnitude = (u16) lroundf(mag * FLOAT_TO_FIXED);
+    AnalogAngle = (u16) lroundf(ang * ANGLE_TO_SHORT);
 }
 
 bool IsLidClosed()
@@ -2809,6 +2833,12 @@ u8 ARM9IORead8(u32 addr)
     case 0x04000132: return KeyCnt & 0xFF;
     case 0x04000133: return KeyCnt >> 8;
 
+    // AM64DS IO Registers
+    CASE_READ8_16BIT(0x04000150, AnalogMagnitude)
+    CASE_READ8_16BIT(0x04000152, AnalogX)
+    CASE_READ8_16BIT(0x04000154, AnalogY)
+    CASE_READ8_16BIT(0x04000156, AnalogAngle)
+
     case 0x040001A2:
         if (!(ExMemCnt[0] & (1<<11)))
             return NDSCart::ReadSPIData();
@@ -2943,6 +2973,11 @@ u16 ARM9IORead16(u32 addr)
 
     case 0x04000130: LagFrameFlag = false; return KeyInput & 0xFFFF;
     case 0x04000132: return KeyCnt;
+
+    case 0x04000150: return AnalogMagnitude;
+    case 0x04000152: return AnalogX;
+    case 0x04000154: return AnalogY;
+    case 0x04000156: return AnalogAngle;
 
     case 0x04000180: return IPCSync9;
     case 0x04000184:
@@ -3084,6 +3119,9 @@ u32 ARM9IORead32(u32 addr)
     case 0x0400010C: return TimerGetCounter(3) | (Timers[3].Cnt << 16);
 
     case 0x04000130: LagFrameFlag = false; return (KeyInput & 0xFFFF) | (KeyCnt << 16);
+
+    case 0x04000150: return (u32) AnalogMagnitude | ((u32) AnalogX << 16);
+    case 0x04000154: return (u32) AnalogY | ((u32) AnalogAngle << 16);;
 
     case 0x04000180: return IPCSync9;
     case 0x04000184: return ARM9IORead16(addr);
@@ -3670,6 +3708,12 @@ u8 ARM7IORead8(u32 addr)
 
     case 0x04000138: return RTC::Read() & 0xFF;
 
+    // AM64DS IO Registers
+    CASE_READ8_16BIT(0x04000150, AnalogMagnitude)
+    CASE_READ8_16BIT(0x04000152, AnalogX)
+    CASE_READ8_16BIT(0x04000154, AnalogY)
+    CASE_READ8_16BIT(0x04000156, AnalogAngle)
+
     case 0x040001A2:
         if (ExMemCnt[0] & (1<<11))
             return NDSCart::ReadSPIData();
@@ -3759,6 +3803,11 @@ u16 ARM7IORead16(u32 addr)
 
     case 0x04000138: return RTC::Read();
 
+    case 0x04000150: return AnalogMagnitude;
+    case 0x04000152: return AnalogX;
+    case 0x04000154: return AnalogY;
+    case 0x04000156: return AnalogAngle;
+
     case 0x04000180: return IPCSync7;
     case 0x04000184:
         {
@@ -3845,6 +3894,9 @@ u32 ARM7IORead32(u32 addr)
     case 0x04000130: return (KeyInput & 0xFFFF) | (KeyCnt << 16);
     case 0x04000134: return RCnt | (KeyCnt & 0xFFFF0000);
     case 0x04000138: return RTC::Read();
+
+    case 0x04000150: return (u32) AnalogMagnitude | ((u32) AnalogX << 16);
+    case 0x04000154: return (u32) AnalogY | ((u32) AnalogAngle << 16);;
 
     case 0x04000180: return IPCSync7;
     case 0x04000184: return ARM7IORead16(addr);

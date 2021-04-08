@@ -16,6 +16,8 @@
     with melonDS. If not, see http://www.gnu.org/licenses/.
 */
 
+#include <math.h>
+
 #include <QKeyEvent>
 #include <SDL2/SDL.h>
 
@@ -35,6 +37,7 @@ u32 HotkeyMask, LastHotkeyMask;
 u32 HotkeyPress, HotkeyRelease;
 
 u32 InputMask;
+float AnalogX, AnalogY;
 
 
 void Init()
@@ -42,6 +45,7 @@ void Init()
     KeyInputMask = 0xFFF;
     JoyInputMask = 0xFFF;
     InputMask = 0xFFF;
+    AnalogX = AnalogY = 0.0f;
 
     KeyHotkeyMask = 0;
     JoyHotkeyMask = 0;
@@ -184,6 +188,35 @@ bool JoystickButtonDown(int val)
     return false;
 }
 
+void ProcessAnalog()
+{
+    constexpr float deadzone = 0.15;
+
+    if (Config::AnalogMapping[ANALOG_X] == -1 ||
+        Config::AnalogMapping[ANALOG_Y] == -1) {
+        AnalogX = AnalogY = 0.0f;
+        return;
+    }
+
+    Sint16 ix = SDL_JoystickGetAxis(Joystick, Config::AnalogMapping[ANALOG_X] & 0xF);
+    Sint16 iy = SDL_JoystickGetAxis(Joystick, Config::AnalogMapping[ANALOG_Y] & 0xF);
+    float x = (ix + 0.5f) / 32767.5f;
+    float y = (iy + 0.5f) / 32767.5f;
+    if ((Config::AnalogMapping[ANALOG_X] >> 7) & 1) x = -x;
+    if ((Config::AnalogMapping[ANALOG_Y] >> 7) & 1) y = -y;
+
+    float mag = hypotf(x, y);
+    if (mag <= deadzone) {
+        AnalogX = AnalogY = 0.0f;
+        return;
+    }
+    float cmag = mag <= 1.0f ? mag : 1.0f;
+    float scale = (cmag - deadzone) / (1.0f - deadzone) / mag;
+
+    AnalogX = x * scale;
+    AnalogY = y * scale;
+}
+
 void Process()
 {
     SDL_JoystickUpdate();
@@ -218,6 +251,8 @@ void Process()
     HotkeyPress = HotkeyMask & ~LastHotkeyMask;
     HotkeyRelease = LastHotkeyMask & ~HotkeyMask;
     LastHotkeyMask = HotkeyMask;
+
+    ProcessAnalog();
 }
 
 

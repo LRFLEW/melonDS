@@ -243,7 +243,8 @@ protected:
         for (int i = 0; i < naxes; i++)
         {
             Sint16 axisval = SDL_JoystickGetAxis(joy, i);
-            int diff = abs(axisval - axesRest[i]);
+            int absrest = abs(axesRest[i]);
+            int absval = abs(axisval);
 
             if (axesRest[i] < -16384 && axisval >= 0)
             {
@@ -251,7 +252,7 @@ protected:
                 click();
                 return;
             }
-            else if (diff > 16384)
+            else if (absrest < 16384 && absval > 16384)
             {
                 int axistype;
                 if (axisval > 0) axistype = 0;
@@ -271,7 +272,7 @@ private slots:
     {
         if (isChecked())
         {
-            setText("[press button/axis]");
+            setText(settingText());
             timerID = startTimer(50);
 
             memset(axesRest, 0, sizeof(axesRest));
@@ -292,8 +293,8 @@ private slots:
         }
     }
 
-private:
-    QString mappingText()
+protected:
+    virtual QString mappingText() const
     {
         int id = *mapping;
 
@@ -345,11 +346,75 @@ private:
         return str;
     }
 
-    int* mapping;
-    bool isHotkey;
+    virtual QString settingText() const
+    {
+        return "[press button/axis]";
+    }
 
-    int timerID;
+    int* mapping;
     int axesRest[16];
+
+private:
+    bool isHotkey;
+    int timerID;
+};
+
+class AnalogMapButton : public JoyMapButton
+{
+    Q_OBJECT
+
+public:
+    explicit AnalogMapButton(int* mapping) : JoyMapButton(mapping, false)
+    {
+        setText(mappingText());
+    }
+
+protected:
+    void timerEvent(QTimerEvent* event) override
+    {
+        SDL_Joystick* joy = Input::Joystick;
+        if (!joy) { click(); return; }
+        if (!SDL_JoystickGetAttached(joy)) { click(); return; }
+
+        int naxes = SDL_JoystickNumAxes(joy);
+        if (naxes > 16) naxes = 16;
+        for (int i = 0; i < naxes; i++)
+        {
+            Sint16 axisval = SDL_JoystickGetAxis(joy, i);
+            int absrest = abs(axesRest[i]);
+            int absval = abs(axisval);
+
+            if (absrest < 16384 && absval > 16384)
+            {
+                *mapping = i | ((axisval > 0) << 7);
+                click();
+                return;
+            }
+        }
+    }
+
+    QString mappingText() const override
+    {
+        int axis = *mapping;
+
+        if (axis == -1) return "None";
+        QString str;
+
+        int axisnum = (axis & 0xF) + 1;
+
+        switch ((axis >> 7) & 0x1)
+        {
+        case 0: str += QString("Axis %1 +").arg(axisnum); break;
+        case 1: str += QString("Axis %1 -").arg(axisnum); break;
+        }
+
+        return str;
+    }
+
+    QString settingText() const override
+    {
+        return "[press axis]";
+    }
 };
 
 #endif // MAPBUTTON_H
